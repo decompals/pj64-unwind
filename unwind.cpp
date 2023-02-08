@@ -281,7 +281,7 @@ static const duk_number_list_entry my_module_consts[] = {
 };
 
 // duktape module entrypoint
-extern "C" __declspec(dllexport) duk_ret_t dukopen_stack_unwind(duk_context* ctx) {
+extern "C" __declspec(dllexport) duk_ret_t dukopen_unwind(duk_context* ctx) {
     duk_push_object(ctx);
     duk_put_function_list(ctx, -1, my_module_funcs);
     duk_put_number_list(ctx, -1, my_module_consts);
