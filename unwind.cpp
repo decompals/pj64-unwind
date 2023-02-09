@@ -109,6 +109,16 @@ uint32_t get_cpu_reg(duk_context* ctx, const std::string& name) {
     }
 }
 
+uint32_t get_cop0_reg(duk_context* ctx, const std::string& name) {
+    duk_push_string(ctx, ("cpu.cop0." + name).c_str());
+    if (!duk_peval(ctx)) {
+        return duk_get_number(ctx, -1);
+    } else {
+        duk_push_error_object(ctx, -1, "Invalid cop0 register name", name.c_str());
+        return 0;
+    }
+}
+
 uint32_t get_cpu_pc(duk_context* ctx) {
     duk_push_string(ctx, "cpu.pc");
     if (!duk_peval(ctx)) {
@@ -253,8 +263,14 @@ static duk_ret_t unwind(duk_context* ctx) {
         return 1;
     }
 
-    std::string ret = "Running Thread:\n";
-    ret += read_thread(ctx, rdram, elf_data, read_mem<uint32_t>(rdram, elf_data.__osRunningThread), get_cpu_pc(ctx), get_cpu_reg(ctx, "ra"), get_cpu_reg(ctx, "sp"));
+    std::string ret = "Running Thread:";
+    uint32_t cur_pc = get_cpu_pc(ctx);
+    if (cur_pc >= 0x80000000 && cur_pc < 0x80000190) {
+        cur_pc = get_cop0_reg(ctx, "epc");
+        ret += " (in exception handler)";
+    }
+    ret += "\n";
+    ret += read_thread(ctx, rdram, elf_data, read_mem<uint32_t>(rdram, elf_data.__osRunningThread), cur_pc, get_cpu_reg(ctx, "ra"), get_cpu_reg(ctx, "sp"));
     ret += "Queued Running Threads:\n";
 
     uint32_t cur_thread = read_mem<uint32_t>(rdram, elf_data.__osRunQueue);
